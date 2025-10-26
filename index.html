@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Book - Endangered Species</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Контейнер книги */
+        .book-container {
+            width: 95%;
+            max-width: 1400px;
+            height: 95vh;
+            background: #8B0000;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            border: 15px solid #5a0000;
+        }
+
+        /* Внутренняя часть книги */
+        .book-inner {
+            width: 100%;
+            height: 100%;
+            background: #FFF8DC;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Страницы */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #FFF8DC;
+            display: none;
+            flex-direction: column;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* Обложка */
+        .cover {
+            background: linear-gradient(45deg, #8B0000, #B22222);
+            color: #FFD700;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .cover-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .cover-subtitle {
+            font-size: 1.5rem;
+            font-style: italic;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+
+        .cover-animals {
+            font-size: 4rem;
+            margin: 30px 0;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            background: #FFD700;
+            color: #8B0000;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            border: 3px solid #FFD700;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            background: #8B0000;
+            color: #FFD700;
+            transform: scale(1.05);
+        }
+
+        /* Шапка страницы */
+        .page-header {
+            background: linear-gradient(45deg, #8B0000, #B22222);
+            color: #FFD700;
+            padding: 20px 30px;
+            text-align: center;
+            border-bottom: 8px solid #FFD700;
+            flex-shrink: 0;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        /* Основной контент - ИСПРАВЛЕНО */
+        .page-content {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 40% 60%;
+            gap: 20px;
+            overflow: hidden;
+            min-height: 0;
+            height: calc(100% - 140px); /* Учитываем header и navigation */
+        }
+
+        /* ЛЕВАЯ КОЛОНКА - 3D МОДЕЛЬ И ФОТО */
+        .media-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .model-section {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(139, 0, 0, 0.2);
+            border: 2px solid #8B0000;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .photo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(139, 0, 0, 0.2);
+            border: 2px solid #8B0000;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .model-title {
+            color: #8B0000;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 6px;
+            flex-shrink: 0;
+        }
+
+        model-viewer {
+            width: 100%;
+            flex: 1;
+            border-radius: 10px;
+            background: #1a1a1a;
+            margin-bottom: 10px;
+            min-height: 200px;
+        }
+
+        .animal-image {
+            width: 100%;
+            height: 180px; /* Уменьшена высота фото */
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid #8B0000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .image-caption {
+            margin-top: 8px;
+            color: #666;
+            font-style: italic;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            flex-shrink: 0;
+        }
+
+        .model-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            margin-top: 10px;
+        }
+
+        .control-btn {
+            padding: 6px 12px;
+            background: #8B0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .control-btn:hover {
+            background: #B22222;
+        }
+
+        /* ПРАВАЯ КОЛОНКА - ТЕКСТ */
+        .text-column {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(139, 0, 0, 0.2);
+            border: 2px solid #8B0000;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .species-name {
+            font-size: 1.8rem;
+            color: #8B0000;
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .scientific-name {
+            font-size: 1.1rem;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .iucn-badge {
+            display: inline-block;
+            background: #FF6B6B;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            border: 2px solid #8B0000;
+            margin-bottom: 15px;
+        }
+
+        .iucn-critical {
+            background: #FF3B30;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .info-card {
+            background: #FFF8DC;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #8B0000;
+            font-size: 0.9rem;
+        }
+
+        .info-card h4 {
+            color: #8B0000;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .description {
+            background: #FFF8DC;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 3px solid #228B22;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .description h3 {
+            color: #228B22;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .conservation {
+            background: #FFF8DC;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #FF6B6B;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .conservation h3 {
+            color: #FF6B6B;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .threats-list {
+            list-style: none;
+            padding-left: 18px;
+            font-size: 0.9rem;
+        }
+
+        .threats-list li {
+            margin-bottom: 4px;
+            position: relative;
+        }
+
+        .threats-list li:before {
+            content: "⚠️";
+            position: absolute;
+            left: -18px;
+        }
+
+        /* Навигация */
+        .navigation {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: #8B0000;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            border: 2px solid #FFD700;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background: #FFD700;
+            color: #8B0000;
+        }
+
+        .page-indicator {
+            position: absolute;
+            bottom: 25px;
+            right: 30px;
+            color: #8B0000;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1024px) {
+            .page-content {
+                grid-template-columns: 45% 55%;
+                gap: 15px;
+                padding: 15px;
+                height: calc(100% - 130px);
+            }
+            
+            .animal-image {
+                height: 160px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .book-container {
+                height: auto;
+                min-height: 95vh;
+                padding: 15px;
+            }
+            
+            .page-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                height: auto;
+            }
+            
+            .cover-title {
+                font-size: 2.5rem;
+            }
+            
+            .page-title {
+                font-size: 1.6rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .navigation {
+                position: relative;
+                bottom: auto;
+                margin-top: 20px;
+                padding: 0 20px;
+            }
+            
+            .page-indicator {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                text-align: center;
+                margin-top: 10px;
+                order: -1;
+            }
+            
+            .animal-image {
+                height: 200px;
+            }
+            
+            .page-header {
+                padding: 15px 20px;
+            }
+            
+            .media-column {
+                min-height: 500px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cover-title {
+                font-size: 2rem;
+            }
+            
+            .page-title {
+                font-size: 1.4rem;
+            }
+            
+            .species-name {
+                font-size: 1.5rem;
+            }
+            
+            .animal-image {
+                height: 180px;
+            }
+            
+            model-viewer {
+                min-height: 250px;
+            }
+        }
+
+        /* Плавные переходы */
+        .page {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Скрыть scrollbar но оставить функциональность */
+        .info-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-section::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .info-section::-webkit-scrollbar-thumb {
+            background: #8B0000;
+            border-radius: 3px;
+        }
+
+        .info-section::-webkit-scrollbar-thumb:hover {
+            background: #B22222;
+        }
+
+        /* Прокрутка для медиа колонки */
+        .media-column {
+            overflow-y: auto;
+        }
+
+        .media-column::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .media-column::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .media-column::-webkit-scrollbar-thumb {
+            background: #8B0000;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="book-container">
+        <div class="book-inner">
+            <!-- ОБЛОЖКА -->
+            <div class="page cover active" id="cover">
+                <h1 class="cover-title">Red Data Book</h1>
+                <p class="cover-subtitle">Protected Species of Eurasia</p>
+                <div class="cover-animals">🦅 🐆</div>
+                <p style="font-size: 1.1rem; margin: 20px 0; color: #FFD700;">
+                    Explore the world's most magnificent endangered species
+                </p>
+                <button class="start-btn" onclick="goToPage(1)">Open Book 📖</button>
+            </div>
+
+            <!-- СТРАНИЦА 1: ОРЛАН -->
+            <div class="page" id="page1">
+                <div class="page-header">
+                    <h2 class="page-title">White-tailed Eagle</h2>
+                    <p class="page-subtitle">The Majestic Sea Eagle</p>
+                </div>
+                
+                <div class="page-content">
+                    <!-- ЛЕВАЯ КОЛОНКА - 3D МОДЕЛЬ И ФОТО -->
+                    <div class="media-column">
+                        <div class="model-section">
+                            <h3 class="model-title">Interactive 3D Model</h3>
+                            <model-viewer 
+                                src="white-tailed_eagle_merikotka (1).glb"
+                                alt="3D model of White-tailed Eagle"
+                                camera-controls
+                                auto-rotate
+                                ar
+                                environment-image="neutral"
+                                shadow-intensity="1.5"
+                                exposure="1.2"
+                                camera-orbit="0deg 75deg 150%"
+                                field-of-view="35deg">
+                                <button slot="ar-button" class="control-btn">📱 AR View</button>
+                            </model-viewer>
+                            <div class="model-controls">
+                                <button class="control-btn" onclick="resetView('eagle')">🔄 Reset</button>
+                                <button class="control-btn" onclick="toggleAutoRotate('eagle')">⏸️ Rotate</button>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-section">
+                            <h3 class="model-title">Wildlife Photo</h3>
+                            <img src="https://inaturalist-open-data.s3.amazonaws.com/photos/8972/large.jpg" 
+                                 alt="White-tailed Eagle in flight" 
+                                 class="animal-image"
+                                 onerror="this.src='https://images.unsplash.com/photo-1551085254-e96b210db58a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                            <p class="image-caption">White-tailed Eagle in majestic flight over water</p>
+                        </div>
+                    </div>
+                    
+                    <!-- ПРАВАЯ КОЛОНКА - ТЕКСТ -->
+                    <div class="text-column">
+                        <div class="info-section">
+                            <h2 class="species-name">White-tailed Eagle</h2>
+                            <p class="scientific-name">Haliaeetus albicilla</p>
+                            <div class="iucn-badge">IUCN: Least Concern</div>
+                            
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <h4>📏 Size & Weight</h4>
+                                    <p>Length: 70-90 cm<br>Wingspan: 200-240 cm<br>Weight: 3-7 kg</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>🎯 Classification</h4>
+                                    <p>Family: Accipitridae<br>Order: Accipitriformes</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>🌍 Distribution</h4>
+                                    <p>Northern Europe, Asia<br>Coastal and wetland areas</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>📅 Lifespan</h4>
+                                    <p>Wild: 20-25 years<br>Captivity: Up to 40 years</p>
+                                </div>
+                            </div>
+
+                            <div class="description">
+                                <h3>🦅 Species Description</h3>
+                                <p>The White-tailed Eagle (Haliaeetus albicilla), also known as the Sea Eagle, is the largest eagle in Europe. This majestic bird of prey is characterized by its impressive wingspan, powerful yellow beak, and distinctive white tail in adult specimens.</p>
+                            </div>
+
+                            <div class="conservation">
+                                <h3>🛡️ Conservation Status</h3>
+                                <p><strong>Population Trend:</strong> Increasing</p>
+                                <p>While currently stable, these eagles face threats from habitat destruction, pollution, and human disturbance at nesting sites. Conservation efforts focus on protecting nesting sites and monitoring populations across their range.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="navigation">
+                    <button class="nav-btn" onclick="goToPage(0)">← Cover</button>
+                    <button class="nav-btn" onclick="goToPage(2)">Next →</button>
+                </div>
+                <div class="page-indicator">Page 1 of 3</div>
+            </div>
+
+            <!-- СТРАНИЦА 2: ЛЕОПАРД -->
+            <div class="page" id="page2">
+                <div class="page-header">
+                    <h2 class="page-title">Amur Leopard</h2>
+                    <p class="page-subtitle">The Rare Forest Ghost</p>
+                </div>
+                
+                <div class="page-content">
+                    <!-- ЛЕВАЯ КОЛОНКА - 3D МОДЕЛЬ И ФОТО -->
+                    <div class="media-column">
+                        <div class="model-section">
+                            <h3 class="model-title">Animated 3D Model</h3>
+                            <model-viewer 
+                                src="leopard_animation_run.glb"
+                                alt="3D model of Amur Leopard"
+                                camera-controls
+                                auto-rotate
+                                ar
+                                environment-image="neutral"
+                                shadow-intensity="1.5"
+                                exposure="1.2"
+                                camera-orbit="0deg 75deg 200%"
+                                field-of-view="35deg"
+                                autoplay>
+                                <button slot="ar-button" class="control-btn">📱 AR View</button>
+                            </model-viewer>
+                            <div class="model-controls">
+                                <button class="control-btn" onclick="resetView('leopard')">🔄 Reset</button>
+                                <button class="control-btn" onclick="toggleAutoRotate('leopard')">⏸️ Rotate</button>
+                            </div>
+                        </div>
+                        
+                        <div class="photo-section">
+                            <h3 class="model-title">Wildlife Photo</h3>
+                            <img src="https://inaturalist-open-data.s3.amazonaws.com/photos/67437441/large.jpg" 
+                                 alt="Amur Leopard in forest" 
+                                 class="animal-image"
+                                 onerror="this.src='https://images.unsplash.com/photo-1546182990-dffeafbe841d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                            <p class="image-caption">Amur Leopard resting in its natural forest habitat</p>
+                        </div>
+                    </div>
+                    
+                    <!-- ПРАВАЯ КОЛОНКА - ТЕКСТ -->
+                    <div class="text-column">
+                        <div class="info-section">
+                            <h2 class="species-name">Amur Leopard</h2>
+                            <p class="scientific-name">Panthera pardus orientalis</p>
+                            <div class="iucn-badge iucn-critical">IUCN: Critically Endangered</div>
+                            
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <h4>🐆 Size & Weight</h4>
+                                    <p>Length: 107-136 cm<br>Tail: 82-90 cm<br>Weight: 32-48 kg</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>🎯 Classification</h4>
+                                    <p>Family: Felidae<br>Order: Carnivora</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>🌍 Distribution</h4>
+                                    <p>Russian Far East<br>Northern China</p>
+                                </div>
+                                <div class="info-card">
+                                    <h4>📅 Lifespan</h4>
+                                    <p>Wild: 10-15 years<br>Captivity: Up to 20 years</p>
+                                </div>
+                            </div>
+
+                            <div class="description">
+                                <h3>🐾 Species Description</h3>
+                                <p>The Amur Leopard (Panthera pardus orientalis) is one of the world's most endangered big cats, with fewer than 100 individuals remaining in the wild. This magnificent subspecies is perfectly adapted to the cold temperate forests of the Russian Far East.</p>
+                            </div>
+
+                            <div class="conservation">
+                                <h3>🛡️ Critical Conservation Status</h3>
+                                <p><strong>Population Estimate:</strong> ~100 individuals<br>
+                                <strong>Population Trend:</strong> Stable but critically low</p>
+                                
+                                <h4>Major Threats:</h4>
+                                <ul class="threats-list">
+                                    <li>Habitat loss and fragmentation</li>
+                                    <li>Poaching for beautiful fur</li>
+                                    <li>Prey base depletion</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="navigation">
+                    <button class="nav-btn" onclick="goToPage(1)">← Previous</button>
+                    <button class="nav-btn" onclick="goToPage(3)">Next →</button>
+                </div>
+                <div class="page-indicator">Page 2 of 3</div>
+            </div>
+
+            <!-- ПОСЛЕДНЯЯ СТРАНИЦА -->
+            <div class="page cover" id="page3">
+                <h1 class="cover-title">Thank You</h1>
+                <p class="cover-subtitle">For exploring our Red Data Book</p>
+                <div class="cover-animals">🌍 🐾 🌿</div>
+                <p style="font-size: 1.1rem; margin: 20px 0; color: #FFD700; text-align: center; max-width: 500px;">
+                    Together we can protect these magnificent species<br>
+                    for future generations
+                </p>
+                <button class="start-btn" onclick="goToPage(0)">Read Again 🔄</button>
+                <div class="page-indicator" style="color: #FFD700; position: relative; margin-top: 30px;">The End</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const totalPages = 4;
+
+        function goToPage(pageIndex) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            document.getElementById(getPageId(pageIndex)).classList.add('active');
+            currentPage = pageIndex;
+            
+            // Автоматическая прокрутка к верху при смене страницы
+            setTimeout(() => {
+                const pageContent = document.querySelector('.page-content');
+                if (pageContent) {
+                    pageContent.scrollTop = 0;
+                }
+            }, 100);
+        }
+
+        function getPageId(index) {
+            switch(index) {
+                case 0: return 'cover';
+                case 1: return 'page1';
+                case 2: return 'page2';
+                case 3: return 'page3';
+                default: return 'cover';
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+        }
+
+        function prevPage() {
+            if (currentPage > 0) goToPage(currentPage - 1);
+        }
+
+        function resetView(animal) {
+            const viewers = document.querySelectorAll('model-viewer');
+            viewers.forEach(viewer => {
+                if (viewer.src.includes(animal)) {
+                    viewer.cameraOrbit = animal === 'eagle' ? '0deg 75deg 150%' : '0deg 75deg 200%';
+                }
+            });
+        }
+
+        function toggleAutoRotate(animal) {
+            const viewers = document.querySelectorAll('model-viewer');
+            viewers.forEach(viewer => {
+                if (viewer.src.includes(animal)) {
+                    viewer.autoRotate = !viewer.autoRotate;
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextPage();
+            if (e.key === 'ArrowLeft') prevPage();
+        });
+
+        // Автоматическая прокрутка к фото при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const mediaColumns = document.querySelectorAll('.media-column');
+                mediaColumns.forEach(column => {
+                    column.scrollTop = 0;
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>
